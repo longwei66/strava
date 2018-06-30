@@ -1,0 +1,8 @@
+library(httr)
+library(httpuv)
+library(jsonlite)
+library(ggplot2)
+library(dplyr)
+library(data.table)
+library(rgbif)
+library(plotly)

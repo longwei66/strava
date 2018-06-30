@@ -1,25 +1,23 @@
 ## =============================================================================
 ## 	Load libraries
 ## =============================================================================
-library(httr)
-library(httpuv)
-library(jsonlite)
-library(ggplot2)
-library(dplyr)
-library(data.table)
-library(rgbif)
-library(plotly)
+source('./R/core-R/load-libraries.R')
 
 
 ## =============================================================================
-## 	Id, Tokens and API keys
+## 	Id, Tokens and API keys, Gear Database
 ## =============================================================================
 source("./conf/keys.R")
+source("./conf/gear-database.R")
 
 
 ## =============================================================================
 ## 	Load useful functions
 ## =============================================================================
+source("./R/get-clean-data/get-gear-name.R")
+source("./R/get-clean-data/clean-activities.R")
+
+
 source("./conf/streams-type.R")
 source("./R/decode-polyline.R")
 source("./R/make-stream-path.R")
@@ -49,16 +47,14 @@ sig <- oauth2.0_token(my_endpoint, my_app, scope = "view_private",
 
 ## =============================================================================
 ## 	Get Activities
+##	& clean activities
 ## =============================================================================
-activities <- GET("https://www.strava.com/", path = "api/v3/activities",
+strava.activities <- GET("https://www.strava.com/", path = "api/v3/activities",
 		  query = list(access_token = myToken, per_page = 200))
-activities <- content(activities, "text")
-activities <- fromJSON(activities)
-## Only rides since last october
-activities <- activities[ activities$type == "Ride" &
-			  	activities$start_date_local > "2017-10-01",]
+strava.activities <- content(strava.activities, "text")
 
-
+my.activities <- cleanActivities(activities = strava.activities,
+				 myGearList = myGear)
 
 
 
@@ -68,9 +64,9 @@ activities <- activities[ activities$type == "Ride" &
 ## Get all streams paths from all activities
 myIds <- unique(activities$id)
 ## remove buggy id number
-myIds <- myIds[ ! myIds == '1522364618']
+myIds <- myIds[ ! myIds == 1522364618]
 
-allStreams <- lapply(X = ,FUN = getStreams)
+allStreams <- lapply(X = myIds ,FUN = getStreams)
 allStreams <- rbindlist(allStreams, use.names = TRUE)
 
 
@@ -130,7 +126,7 @@ h <- h + geom_path(aes(x = lon, y = lat, group = id, col = elevation),
 h <- h + scale_colour_gradient2(low = "blue", mid = "green", high = "red",
 				midpoint = 120)
 h <- h + coord_map()
-h <- h + facet_wrap( ~ id)
+#h <- h + facet_wrap( ~ id)
 h
 
 
